@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<link rel="apple-touch-icon" href="apple-touch-icon.jpg">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Pre-Dump Warmup">
+<title>Pre-Dump Warmup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #f5f4f0;
+    --surface: #ffffff;
+    --border: rgba(0,0,0,0.09);
+    --text: #111;
+    --text2: #666;
+    --text3: #aaa;
+    --radius: 14px;
+    --radius-sm: 10px;
+    --game-c: #166534; --game-bg: #f0fdf4; --game-mid: #4ade80; --game-btn: #16a34a;
+    --off-c:  #1e40af; --off-bg:  #eff6ff; --off-mid:  #60a5fa; --off-btn:  #2563eb;
+    --golf-c: #92400e; --golf-bg: #fffbeb; --golf-mid: #fbbf24; --golf-btn: #d97706;
+    --rest-c: #374151; --rest-bg: #f9fafb;
+  }
+  body {
+    font-family: 'Figtree', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg); color: var(--text);
+    min-height: 100vh; -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── Header ── */
+  .header {
+    position: sticky; top: 0; z-index: 20;
+    background: var(--surface); border-bottom: 1px solid var(--border);
+    padding: 14px 18px 0;
+  }
+  .header-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .app-name { font-size: 18px; font-weight: 600; letter-spacing: -0.3px; }
+  .streak-pill {
+    display: flex; align-items: center; gap: 5px;
+    padding: 6px 13px; border-radius: 99px;
+    background: #fff7ed; border: 1px solid #fed7aa;
+  }
+  .streak-num { font-size: 16px; font-weight: 600; color: #c2410c; }
+  .streak-txt { font-size: 12px; color: #ea580c; }
+
+  /* Day tabs */
+  .tabs { display: flex; gap: 0; overflow-x: auto; scrollbar-width: none; margin: 0 -18px; padding: 0 18px; }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab {
+    flex-shrink: 0; padding: 9px 12px 11px;
+    font-size: 13px; font-weight: 500; color: var(--text2);
+    background: none; border: none; cursor: pointer;
+    border-bottom: 2.5px solid transparent;
+    position: relative; font-family: inherit;
+    transition: color 0.12s;
+  }
+  .tab .tdot {
+    position: absolute; top: 9px; right: 5px;
+    width: 4px; height: 4px; border-radius: 50%; background: #f97316;
+  }
+  .tab.sel-game { color: var(--game-btn); border-bottom-color: var(--game-btn); }
+  .tab.sel-off  { color: var(--off-btn);  border-bottom-color: var(--off-btn);  }
+  .tab.sel-golf { color: var(--golf-btn); border-bottom-color: var(--golf-btn); }
+  .tab.sel-rest { color: var(--rest-c);   border-bottom-color: var(--rest-c);   }
+
+  /* ── Content ── */
+  .content { padding: 16px 16px 60px; max-width: 540px; margin: 0 auto; }
+
+  /* Day hero card */
+  .hero {
+    background: var(--surface); border-radius: var(--radius);
+    border: 1px solid var(--border); padding: 16px 18px; margin-bottom: 12px;
+  }
+  .hero-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; }
+  .hero-name { font-size: 24px; font-weight: 600; letter-spacing: -0.5px; }
+  .hero-sub  { font-size: 13px; color: var(--text2); margin-top: 3px; line-height: 1.4; }
+  .pill {
+    font-size: 11px; font-weight: 600; padding: 4px 10px;
+    border-radius: 99px; letter-spacing: 0.03em; text-transform: uppercase; flex-shrink: 0;
+  }
+  .pill-game { background: var(--game-bg); color: var(--game-c); }
+  .pill-off  { background: var(--off-bg);  color: var(--off-c);  }
+  .pill-golf { background: var(--golf-bg); color: var(--golf-c); }
+  .pill-rest { background: var(--rest-bg); color: var(--rest-c); }
+
+  .prog-wrap { background: var(--bg); border-radius: 4px; height: 5px; overflow: hidden; margin-bottom: 6px; }
+  .prog-bar  { height: 100%; border-radius: 4px; transition: width 0.35s ease; }
+  .pg-game { background: var(--game-btn); }
+  .pg-off  { background: var(--off-btn); }
+  .pg-golf { background: var(--golf-btn); }
+  .prog-meta { display: flex; justify-content: space-between; font-size: 12px; color: var(--text3); }
+  .prog-pct  { font-weight: 600; }
+
+  /* Tip */
+  .tip {
+    font-size: 13px; color: var(--text2); line-height: 1.55;
+    background: var(--surface); border-radius: var(--radius-sm);
+    padding: 12px 14px; margin-bottom: 12px;
+    border: 1px solid var(--border);
+    border-left-width: 3px;
+  }
+  .tip-game { border-left-color: var(--game-mid); }
+  .tip-off  { border-left-color: var(--off-mid); }
+  .tip-golf { border-left-color: var(--golf-mid); }
+  .tip b { color: var(--text); font-weight: 600; }
+
+  /* Section */
+  .sec-label {
+    font-size: 11px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.08em; color: var(--text3); margin: 18px 0 8px 2px;
+  }
+  .checklist { background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border); overflow: hidden; }
+
+  /* Check item */
+  .item {
+    display: flex; align-items: flex-start; gap: 13px;
+    padding: 13px 14px; border-bottom: 1px solid var(--border);
+    cursor: pointer; -webkit-tap-highlight-color: transparent;
+    transition: background 0.1s;
+  }
+  .item:last-child { border-bottom: none; }
+  .item:active { background: var(--bg); }
+  .item.done .item-name { text-decoration: line-through; color: var(--text3); }
+  .item.done .item-desc,
+  .item.done .item-time { color: var(--text3); opacity: 0.55; }
+
+  .cb {
+    width: 24px; height: 24px; border-radius: 50%;
+    border: 1.5px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; margin-top: 1px; transition: all 0.15s;
+  }
+  .cb svg { opacity: 0; transition: opacity 0.12s; }
+  .item.done .cb svg { opacity: 1; }
+  .item.done .cb { border-color: transparent; }
+
+  .cb-game { border-color: #86efac; }
+  .item.done .cb-game { background: var(--game-btn); }
+  .cb-off  { border-color: #93c5fd; }
+  .item.done .cb-off  { background: var(--off-btn); }
+  .cb-golf { border-color: #fcd34d; }
+  .item.done .cb-golf { background: var(--golf-btn); }
+
+  .item-body { flex: 1; min-width: 0; }
+  .item-name { font-size: 14px; font-weight: 500; line-height: 1.35; color: var(--text); }
+  .item-desc { font-size: 12px; color: var(--text2); margin-top: 3px; line-height: 1.5; }
+  .item-time { font-size: 11px; color: var(--text3); margin-top: 4px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+
+  /* Complete button */
+  .complete-btn {
+    width: 100%; padding: 15px; border-radius: var(--radius); border: none;
+    font-family: inherit; font-size: 15px; font-weight: 600;
+    cursor: pointer; margin-top: 16px;
+    transition: opacity 0.15s, transform 0.1s;
+  }
+  .complete-btn:active:not(:disabled) { transform: scale(0.98); }
+  .complete-btn:disabled { opacity: 0.3; cursor: default; }
+  .btn-game { background: var(--game-btn); color: #fff; }
+  .btn-off  { background: var(--off-btn);  color: #fff; }
+  .btn-golf { background: var(--golf-btn); color: #fff; }
+
+  .done-banner {
+    margin-top: 16px; padding: 18px; text-align: center;
+    background: #f0fdf4; border: 1px solid #86efac; border-radius: var(--radius);
+  }
+  .done-banner .di { font-size: 30px; margin-bottom: 6px; }
+  .done-banner p   { font-size: 16px; font-weight: 600; color: var(--game-c); }
+  .done-banner .ds { font-size: 12px; color: #15803d; margin-top: 3px; }
+
+  /* Rest day */
+  .rest-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 28px 20px; text-align: center;
+  }
+  .rest-emoji { font-size: 38px; margin-bottom: 12px; }
+  .rest-title { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+  .rest-body  { font-size: 14px; color: var(--text2); line-height: 1.65; }
+
+  /* Streak history */
+  .hist-wrap {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 14px 16px; margin-top: 20px;
+  }
+  .hist-title { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text3); margin-bottom: 12px; }
+  .dot-row { display: flex; flex-wrap: wrap; gap: 6px; }
+  .sdot {
+    width: 34px; height: 34px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 600;
+  }
+  .sd-done   { background: #dcfce7; color: #166534; }
+  .sd-miss   { background: #fef2f2; color: #b91c1c; }
+  .sd-rest   { background: #f1f5f9; color: #94a3b8; }
+  .sd-future { background: var(--bg); color: var(--text3); border: 1px dashed var(--border); }
+  .sd-today  { outline: 2.5px solid #f97316; outline-offset: 2px; }
+  .legend { margin-top: 10px; display: flex; gap: 14px; flex-wrap: wrap; }
+  .leg-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text3); }
+  .leg-dot  { width: 8px; height: 8px; border-radius: 50%; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-row">
+    <span class="app-name">⚾ Pre-Dump Warmup</span>
+    <div class="streak-pill">
+      <span style="font-size:15px">🔥</span>
+      <span class="streak-num" id="snum">0</span>
+      <span class="streak-txt">day streak</span>
+    </div>
+  </div>
+  <div class="tabs" id="tabs"></div>
+</div>
+
+<div class="content" id="content"></div>
+
+<script>
+const DAYS = [
+  { key:'mon', name:'Monday',    short:'Mon', type:'off',  dow:1 },
+  { key:'tue', name:'Tuesday',   short:'Tue', type:'game', dow:2 },
+  { key:'wed', name:'Wednesday', short:'Wed', type:'game', dow:3 },
+  { key:'thu', name:'Thursday',  short:'Thu', type:'game', dow:4 },
+  { key:'fri', name:'Friday',    short:'Fri', type:'off',  dow:5 },
+  { key:'sat', name:'Saturday',  short:'Sat', type:'golf', dow:6 },
+  { key:'sun', name:'Sunday',    short:'Sun', type:'rest', dow:0 },
+];
+
+const DATA = {
+  tue: {
+    sub: 'Game 1 — fresh start after the weekend',
+    tip: '<b>Early season (weeks 1–3):</b> Cap your throws at 75 ft max. Tendons adapt slower than muscles — don\'t push full distance until you have 3+ weeks of consistent throwing.',
+    sections: [
+      { title: 'Pre-game warm-up · 30 min', items: [
+        { id:'t1', name:'Dynamic lower body', desc:'Leg swings (front & side), hip circles, walking lunges, high knees — 2 sets each. Focus on hips and groin for SS lateral range.', time:'6 min' },
+        { id:'t2', name:'Upper body & thoracic mobility', desc:'Trunk rotations, arm circles small-to-large, cross-body shoulder stretch, thoracic rotations over a bag or bench.', time:'4 min' },
+        { id:'t3', name:'Resistance band activation', desc:'External rotations, internal rotations, band pull-aparts, shoulder Ys. Activate the rotator cuff before you touch a ball.', time:'5 min' },
+        { id:'t4', name:'Full throwing progression', desc:'Start at 30 ft easy lobs. Step back every 2 min: 30 → 45 → 60 → 90 ft. Finish with 5 throws from your knees to groove SS arm slot.', time:'10 min' },
+        { id:'t5', name:'SS-specific activation', desc:'Lateral shuffles, drop steps left & right, 3 simulated fielding reps (shuffle → plant → throw motion). Jog your line.', time:'5 min' },
+      ]},
+      { title: 'Post-game cooldown · 5 min', items: [
+        { id:'tc1', name:'Light arm shake-out', desc:'Gently shake out throwing arm, then cross-body shoulder stretch. Hold 30 sec each side.', time:'2 min' },
+        { id:'tc2', name:'Hip flexor & hamstring stretch', desc:'Kneeling hip flexor lunge (30 sec each side), standing hamstring fold. Hold each 30+ sec.', time:'2 min' },
+        { id:'tc3', name:'Wrist & forearm flush', desc:'Wrist flexor stretch and extensor stretch. Gentle forearm massage if tight. Quick but don\'t skip it.', time:'1 min' },
+      ]}
+    ]
+  },
+  wed: {
+    sub: 'Game 2 — back-to-back, flush the arm first',
+    tip: '<b>Zero recovery time since Tuesday.</b> Flush the arm out before any throwing. Cap at 60 ft max today — accuracy and looseness only, no velocity.',
+    sections: [
+      { title: 'Pre-game warm-up · 30 min', items: [
+        { id:'w1', name:'Arm flush — do this first', desc:"Light band external rotations, wrist circles, gentle arm swings forward & back. This safely wakes up yesterday's arm before any load.", time:'5 min' },
+        { id:'w2', name:'Dynamic lower body', desc:'Hip circles, leg swings, lateral lunges. Keep it smooth — no explosive movements yet.', time:'5 min' },
+        { id:'w3', name:'Thoracic & shoulder mobility', desc:'Thoracic rotations, cross-body stretch, sleeper stretch. Focus on loosening what\'s tight from Tuesday.', time:'5 min' },
+        { id:'w4', name:'Conservative throwing progression', desc:'30 ft → 45 → 60 ft max. Do not push to 90 today. 10–12 throws total. Prioritize looseness over velocity.', time:'10 min' },
+        { id:'w5', name:'SS fielding activation', desc:'Lateral shuffles, drop steps, backhand simulation. Moderate intensity only — save your legs for the game.', time:'5 min' },
+      ]},
+      { title: 'Post-game cooldown · 5 min', items: [
+        { id:'wc1', name:'Ice on elbow or shoulder', desc:'If available: 5–10 min of ice on medial elbow or posterior shoulder. Highly recommended after back-to-back nights.', time:'Recommended' },
+        { id:'wc2', name:'Cross-body shoulder stretch', desc:'Hold 30–45 sec each side. Most critical stretch after throwing two nights in a row.', time:'2 min' },
+        { id:'wc3', name:'Hip & hamstring static stretch', desc:'Pigeon or figure-4 (30 sec each), plus standing hamstring fold. Legs are carrying extra fatigue tonight.', time:'3 min' },
+      ]}
+    ]
+  },
+  thu: {
+    sub: 'Game 3 — manage fatigue, stay loose',
+    tip: '<b>Three straight nights.</b> Goal is to feel loose, not fire at full intensity. Cap throws at 60 ft. If anything feels tight or sore, back off immediately — no heroics on day 3.',
+    sections: [
+      { title: 'Pre-game warm-up · 30 min', items: [
+        { id:'h1', name:'Extended arm flush', desc:'Band external rotations, wrist mobility circles, gentle forearm self-massage. Spend extra time here — your arm needs this most on day 3.', time:'6 min' },
+        { id:'h2', name:'Full body loosening', desc:'Hip circles, trunk rotations, shoulder rolls. Slow and deliberate — focus on mobility and circulation, not activation.', time:'6 min' },
+        { id:'h3', name:'Soft tissue (if available)', desc:'Foam roll or massage lats and thoracic spine. No roller? Cross-body stretch + doorframe chest opener instead.', time:'5 min' },
+        { id:'h4', name:'Short throwing progression', desc:'30 → 45 → 60 ft max. 10–12 throws total. Prioritize looseness. Stop immediately if elbow feels off.', time:'8 min' },
+        { id:'h5', name:'Minimal SS activation', desc:'A few easy lateral shuffles and drop steps only — just remind your legs what\'s coming. Nothing explosive.', time:'5 min' },
+      ]},
+      { title: 'Post-game cooldown · 5–7 min', items: [
+        { id:'hc1', name:'Extended static stretch', desc:'Pigeon or figure-4 (45 sec each), hip flexor lunge, hamstring fold. You\'ve played 3 nights — take your time here.', time:'3 min' },
+        { id:'hc2', name:'Arm care priority', desc:'Sleeper stretch + cross-body shoulder. Hold 45+ sec each. If medial elbow is sore, ice it tonight before bed.', time:'3 min' },
+        { id:'hc3', name:'Hydration check', desc:'Drink 16–20 oz within 30 min of finishing. Tomorrow is recovery day — go to bed early.', time:'1 min' },
+      ]}
+    ]
+  },
+  mon: {
+    sub: 'Off day — light recovery, prepare for the week',
+    tip: 'Monday is your first day off. Light maintenance keeps you primed for Tuesday\'s first game of the week.',
+    sections: [
+      { title: 'Maintenance routine · 15 min', items: [
+        { id:'m1', name:'Foam roll / soft tissue', desc:'Thoracic spine, lats, glutes, hamstrings. Spend 60+ sec on any spots that are still tight from last week.', time:'5 min' },
+        { id:'m2', name:'Shoulder & elbow flush', desc:'Band external rotations, pull-aparts, wrist flexor and extensor stretches. Keep it light — this is maintenance, not a workout.', time:'5 min' },
+        { id:'m3', name:'Static stretching', desc:'Pigeon stretch, cross-body shoulder, sleeper stretch, hip flexor kneeling lunge. Hold each 30–45 sec.', time:'5 min' },
+      ]}
+    ]
+  },
+  fri: {
+    sub: 'Recovery — most important day of the week',
+    tip: '<b>After 3 straight game nights, Friday is your highest-priority recovery day.</b> If anything feels sore, spend all 15 min on soft tissue and skip the band work completely.',
+    sections: [
+      { title: 'Recovery routine · 15 min', items: [
+        { id:'f1', name:'Foam roll — extended session', desc:'Thoracic spine, lats, glutes, IT band, hamstrings. After 3 game nights, this gets the most time of anything this week.', time:'7 min' },
+        { id:'f2', name:'Gentle shoulder flush', desc:'Very light band external rotations only. If elbow or shoulder is sore, skip entirely and just stretch — no exceptions.', time:'4 min' },
+        { id:'f3', name:'Full body static stretch', desc:'Hip flexors, hamstrings, pigeon, cross-body shoulder, sleeper stretch. Longest holds of the week — 45+ sec each.', time:'4 min' },
+      ]}
+    ]
+  },
+  sat: {
+    sub: 'Golf day — conservative arm care',
+    tip: '<b>Highest elbow-risk combo of the week.</b> Golf + 3 throwing nights = significant medial elbow stress. If elbow soreness appears mid-season, reduce golf rounds before reducing anything else.',
+    sections: [
+      { title: 'Pre-golf routine · 15 min', items: [
+        { id:'s1', name:'Hip & thoracic mobility', desc:'Hip 90/90 stretch, seated thoracic rotations, world\'s greatest stretch. Golf and softball share the same rotational demand on the same joints.', time:'5 min' },
+        { id:'s2', name:'Forearm & wrist care', desc:'Wrist flexor stretch, extensor stretch, finger extensors. Golf gripping taxes the exact same forearm muscles you throw with — keep these loose.', time:'5 min' },
+        { id:'s3', name:'Light shoulder flush', desc:'Band pull-aparts and face pulls only — very easy resistance. Goal is circulation, not loading. No heavier band work today.', time:'5 min' },
+      ]}
+    ]
+  }
+};
+
+// ── State ──────────────────────────────────────────────────────
+function gs() { try { return JSON.parse(localStorage.getItem('sp_v2')||'{}'); } catch { return {}; } }
+function ss(s) { localStorage.setItem('sp_v2', JSON.stringify(s)); }
+
+function todayDow()   { return new Date().getDay(); }
+function todayDK()    { return new Date().toISOString().slice(0,10); }
+function dayKeyOf(dow){ return DAYS.find(d=>d.dow===dow)?.key||'sun'; }
+function dateForDow(dow) {
+  const today = new Date(); let diff = dow - today.getDay();
+  if (diff < 0) diff += 7;
+  const d = new Date(today); d.setDate(today.getDate()+diff);
+  return d.toISOString().slice(0,10);
+}
+
+function getChecked(dk, dayKey) { return gs()[dk]?.[dayKey]?.checked||{}; }
+function setChecked(dk, dayKey, id, v) {
+  const s=gs();
+  if(!s[dk])s[dk]={};
+  if(!s[dk][dayKey])s[dk][dayKey]={checked:{},complete:false};
+  s[dk][dayKey].checked[id]=v; ss(s);
+}
+function isDayComplete(dk, dayKey) { return !!gs()[dk]?.[dayKey]?.complete; }
+function markDayComplete(dk, dayKey) {
+  const s=gs();
+  if(!s[dk])s[dk]={};
+  if(!s[dk][dayKey])s[dk][dayKey]={checked:{},complete:false};
+  s[dk][dayKey].complete=true; ss(s);
+}
+
+function allItems(dayKey) {
+  const d=DATA[dayKey]; if(!d) return [];
+  return d.sections.flatMap(sec=>sec.items);
+}
+function pct(dk, dayKey) {
+  const items=allItems(dayKey); if(!items.length) return 100;
+  const ch=getChecked(dk,dayKey);
+  return Math.round(items.filter(i=>ch[i.id]).length/items.length*100);
+}
+
+function calcStreak() {
+  const s=gs(); const today=new Date(); let streak=0;
+  const tdk=todayDK(), tkey=dayKeyOf(todayDow());
+  if(tkey==='sun'||s[tdk]?.[tkey]?.complete) streak++;
+  for(let i=1;i<=180;i++){
+    const d=new Date(today); d.setDate(today.getDate()-i);
+    const dk=d.toISOString().slice(0,10);
+    const key=dayKeyOf(d.getDay());
+    if(key==='sun'){streak++;continue;}
+    if(s[dk]?.[key]?.complete) streak++;
+    else break;
+  }
+  return streak;
+}
+
+// ── Render ─────────────────────────────────────────────────────
+let selDow = todayDow();
+
+function renderTabs() {
+  const tDow=todayDow();
+  document.getElementById('tabs').innerHTML=DAYS.map(d=>{
+    const sel=d.dow===selDow;
+    return `<button class="tab${sel?' sel-'+d.type:''}" onclick="sel(${d.dow})">
+      ${d.dow===tDow?'<span class="tdot"></span>':''}${d.short}
+    </button>`;
+  }).join('');
+}
+
+function renderContent() {
+  const day=DAYS.find(d=>d.dow===selDow);
+  const el=document.getElementById('content');
+  const isToday=day.dow===todayDow();
+
+  if(day.type==='rest'){
+    el.innerHTML=`
+      <div class="hero">
+        <div class="hero-top">
+          <div>
+            <div class="hero-name">${day.name}</div>
+            <div class="hero-sub">${isToday?'Today · ':''}Full rest day</div>
+          </div>
+          <span class="pill pill-rest">Rest</span>
+        </div>
+      </div>
+      <div class="rest-card">
+        <div class="rest-emoji">😴</div>
+        <div class="rest-title">No routine today</div>
+        <div class="rest-body">With ~100 games across the season, Sunday rest is non-negotiable recovery. Optional: easy 20-min walk or swim only.<br><br>Focus on hydration and 7–8 hours of sleep. Your arm and legs need this to stay healthy into September.</div>
+      </div>
+      ${streakHistHtml()}`;
+    return;
+  }
+
+  const dk=dateForDow(day.dow);
+  const data=DATA[day.key];
+  if(!data){el.innerHTML='';return;}
+
+  const ch=getChecked(dk,day.key);
+  const done=isDayComplete(dk,day.key);
+  const p=pct(dk,day.key);
+  const tc=day.type;
+  const canDone=p>=80;
+
+  const sectHtml=data.sections.map(sec=>{
+    const items=sec.items.map(item=>{
+      const isDone=!!ch[item.id];
+      return `<div class="item${isDone?' done':''} cb-${tc}" onclick="toggle('${dk}','${day.key}','${item.id}')">
+        <div class="cb cb-${tc}">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+            <path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="item-body">
+          <div class="item-name">${item.name}</div>
+          <div class="item-desc">${item.desc}</div>
+          <div class="item-time">${item.time}</div>
+        </div>
+      </div>`;
+    }).join('');
+    return `<div class="sec-label">${sec.title}</div><div class="checklist">${items}</div>`;
+  }).join('');
+
+  const footHtml=done
+    ?`<div class="done-banner"><div class="di">✓</div><p>Day complete!</p><div class="ds">${p}% completed — streak extended</div></div>`
+    :`<button class="complete-btn btn-${tc}" ${canDone?'':'disabled'} onclick="complete('${dk}','${day.key}')">
+        ${canDone?'✓ Mark day complete':`${p}% done — need 80% to complete`}
+      </button>`;
+
+  el.innerHTML=`
+    <div class="hero">
+      <div class="hero-top">
+        <div>
+          <div class="hero-name">${day.name}</div>
+          <div class="hero-sub">${isToday?'Today · ':''}${data.sub}</div>
+        </div>
+        <span class="pill pill-${tc}">${tc==='game'?'Game':tc==='off'?'Off day':'Golf'}</span>
+      </div>
+      <div class="prog-wrap"><div class="prog-bar pg-${tc}" style="width:${p}%"></div></div>
+      <div class="prog-meta"><span>${canDone?'Ready to complete':'80% needed for streak'}</span><span class="prog-pct">${p}%</span></div>
+    </div>
+    <div class="tip tip-${tc}">${data.tip}</div>
+    ${sectHtml}
+    ${footHtml}
+    ${streakHistHtml()}
+  `;
+}
+
+function streakHistHtml(){
+  const s=gs(); const today=new Date(); const dots=[];
+  for(let i=13;i>=0;i--){
+    const d=new Date(today); d.setDate(today.getDate()-i);
+    const dk=d.toISOString().slice(0,10);
+    const dow=d.getDay(); const key=dayKeyOf(dow);
+    const label=['Su','Mo','Tu','We','Th','Fr','Sa'][dow];
+    const isToday=i===0;
+    let cls;
+    if(key==='sun') cls='sd-rest';
+    else if(s[dk]?.[key]?.complete) cls='sd-done';
+    else if(isToday) cls='sd-future';
+    else cls='sd-miss';
+    dots.push(`<div class="sdot ${cls}${isToday?' sd-today':''}">${label}</div>`);
+  }
+  return `<div class="hist-wrap">
+    <div class="hist-title">Last 14 days</div>
+    <div class="dot-row">${dots.join('')}</div>
+    <div class="legend">
+      <div class="leg-item"><div class="leg-dot" style="background:#4ade80"></div>Complete</div>
+      <div class="leg-item"><div class="leg-dot" style="background:#fca5a5"></div>Missed</div>
+      <div class="leg-item"><div class="leg-dot" style="background:#e2e8f0"></div>Rest / off</div>
+    </div>
+  </div>`;
+}
+
+function sel(dow){selDow=dow;renderTabs();renderContent();}
+function toggle(dk,dayKey,id){
+  const ch=getChecked(dk,dayKey);
+  setChecked(dk,dayKey,id,!ch[id]);
+  renderContent();
+}
+function complete(dk,dayKey){
+  markDayComplete(dk,dayKey);
+  renderContent();
+  document.getElementById('snum').textContent=calcStreak();
+}
+
+document.getElementById('snum').textContent=calcStreak();
+renderTabs();
+renderContent();
+</script>
+</body>
+</html>
